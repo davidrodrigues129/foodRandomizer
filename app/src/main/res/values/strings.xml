@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">foodRandomizer</string>
+    <string name="food_randomizer">Food Randomizer</string>
+    <string name="randomize">Randomize</string>
+</resources>
