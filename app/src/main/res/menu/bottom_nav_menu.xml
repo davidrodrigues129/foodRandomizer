@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item
+        android:id="@+id/vMenu"
+        android:icon="@drawable/baseline_sports_basketball_24"
+        android:title="V" />
+    <item
+        android:id="@+id/home"
+        android:icon="@drawable/baseline_home_24"
+        android:focusable="true"
+        android:title="Home" />
+
+    <item
+        android:id="@+id/nMenu"
+        android:icon="@drawable/baseline_child_care_24"
+        android:title="N" />
+</menu>

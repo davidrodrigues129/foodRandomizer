@@ -1,0 +1,14 @@
+<resources>
+    <style name="BottomNavigationViewStyle" parent="Widget.MaterialComponents.BottomNavigationView">
+        <item name="itemTextAppearanceActive">@style/ActiveTextAppearance</item>
+        <item name="itemTextAppearanceInactive">@style/InactiveTextAppearance</item>
+    </style>
+
+    <style name="ActiveTextAppearance" parent="TextAppearance.AppCompat">
+        <item name="android:textSize">20sp</item> <!-- Tamanho da letra ativa -->
+    </style>
+
+    <style name="InactiveTextAppearance" parent="TextAppearance.AppCompat">
+        <item name="android:textSize">16sp</item> <!-- Tamanho da letra inativa -->
+    </style>
+</resources>
