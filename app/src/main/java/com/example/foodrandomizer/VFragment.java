@@ -31,6 +31,7 @@ public class VFragment extends Fragment {
     private FragmentVBinding binding;
 
     private List<String> foodList = Arrays.asList(
+            "Arroz de atum",
             "Bacalhau à Assis",
             "Bifinhos Rápidos",
             "Caril de Frango com arroz",
@@ -50,6 +51,7 @@ public class VFragment extends Fragment {
             "Nova receita"
     );
     private Map<String, Integer> foodImages = new HashMap<String, Integer>() {{
+        put("Arroz de atum", R.drawable.arroz_de_atum);
         put("Bacalhau à Assis", R.drawable.bacalhau_a_assis);
         put("Bifinhos Rápidos", R.drawable.bifinhos_rapidos);
         put("Caril de Frango com arroz", R.drawable.caril_de_frango_com_arroz);
@@ -97,6 +99,7 @@ public class VFragment extends Fragment {
 
     private void showRecipeList() {
         String[] recipes = {
+                "Arroz de atum",
                 "Bacalhau à Assis",
                 "Bacalhau à Brás",
                 "Bifinhos Rápidos",
