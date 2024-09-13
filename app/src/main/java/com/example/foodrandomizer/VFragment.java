@@ -16,8 +16,10 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -110,9 +112,52 @@ public class VFragment extends Fragment {
         if (id == R.id.action_list) {
             showRecipeList();
             return true;
+        } else if (id == R.id.action_remove) {
+            showRemoveRecipeDialog();
+            return true;
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    // Function to show the remove recipe dialog
+    private void showRemoveRecipeDialog() {
+        String[] recipes = foodList.toArray(new String[0]);
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+        builder.setTitle("Remove Recipe")
+                .setItems(recipes, (dialog, which) -> {
+                    String selectedRecipe = recipes[which];
+
+                    // Show confirmation dialog before deleting
+                    new AlertDialog.Builder(getContext())
+                            .setTitle("Delete Recipe")
+                            .setMessage("Are you sure you want to delete this recipe?")
+                            .setPositiveButton("Yes", (confirmDialog, confirmWhich) -> {
+                                // Remove the recipe from the list
+                                foodList.remove(selectedRecipe);
+                                foodImages.remove(selectedRecipe);  // Remove the image if present
+                                customImageUris.remove(selectedRecipe);  // Remove custom URI if present
+
+                                // Save the updated list
+                                saveRecipes();
+
+                                // Check if the selected recipe is currently displayed
+                                String displayedRecipe = binding.foodName.getText().toString();
+                                if (selectedRecipe.equals(displayedRecipe)) {
+                                    // Clear the displayed recipe if it matches the deleted one
+                                    binding.foodName.setText("");
+                                    binding.foodImageView.setImageDrawable(null);
+                                }
+
+                                // Show success message
+                                Toast.makeText(getContext(), "Recipe removed successfully", Toast.LENGTH_SHORT).show();
+                            })
+                            .setNegativeButton("No", null) // Dismiss the dialog if "No" is selected
+                            .show();
+                })
+                .setPositiveButton("OK", null)
+                .show();
     }
 
     // Show recipe list - differentiate between drawable resource and URI
@@ -158,8 +203,8 @@ public class VFragment extends Fragment {
 
         TextView foodTextView = binding.foodName;
         ImageView foodImageView = binding.foodImageView;
-        Button randomizeButton = binding.randomizeButton;
-        Button addRecipeButton = binding.addRecipeButton;
+        ImageButton randomizeButton = binding.randomizeButton;
+        ImageButton addRecipeButton = binding.addRecipeButton;
 
         randomizeButton.setOnClickListener(v -> {
             String randomFood = foodList.get(new Random().nextInt(foodList.size()));

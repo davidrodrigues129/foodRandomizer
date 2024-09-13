@@ -14,10 +14,12 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintBottom_toTopOf="@id/randomizeButton"
+        app:layout_constraintBottom_toTopOf="@id/foodImageView"
         app:layout_constraintVertical_bias="0.4"
         app:layout_constraintHorizontal_bias="0.5"
-        android:textSize="18sp" />
+        android:textSize="18sp"
+        android:layout_marginTop="80dp"
+        />
 
     <ImageView
         android:id="@+id/foodImageView"
@@ -26,34 +28,50 @@
         app:layout_constraintTop_toBottomOf="@id/foodName"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        android:layout_marginTop="20dp"
+        android:layout_marginTop="35dp"
         />
 
-    <Button
-        android:id="@+id/randomizeButton"
+    <!-- LinearLayout to place buttons side by side -->
+    <LinearLayout
+        android:id="@+id/buttonLayout"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="250dp"
-        android:text="Randomize"
-        android:textColor="@android:color/white"
+        android:orientation="horizontal"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/foodName"
-        app:layout_constraintVertical_bias="0.5" />
+        android:gravity="center"
+        android:layout_marginBottom="90dp"
+        >
 
-    <Button
-        android:id="@+id/addRecipeButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="375dp"
-        android:text="Add a recipe"
-        android:textColor="@android:color/white"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/foodName"
-        app:layout_constraintVertical_bias="0.5" />
+        <!-- Randomize Button -->
+        <ImageButton
+            android:id="@+id/randomizeButton"
+            android:layout_width="80dp"
+            android:layout_height="80dp"
+            android:layout_marginEnd="120dp"
+            android:backgroundTint="@color/muted_blue"
+            android:background="@drawable/small_circle_background"
+            android:src="@drawable/baseline_shuffle_24"
+            android:scaleType="fitCenter"
+            android:padding="10dp"
+        />
+
+        <!-- Add Recipe Button -->
+        <ImageButton
+            android:id="@+id/addRecipeButton"
+            android:layout_width="80dp"
+            android:layout_height="80dp"
+            android:backgroundTint="@color/muted_blue"
+            android:background="@drawable/small_circle_background"
+            android:src="@drawable/baseline_add_24"
+            android:drawablePadding="10dp"
+            android:textColor="@android:color/white"
+            android:scaleType="fitCenter"
+            android:padding="10dp"
+            />
+
+    </LinearLayout>
 
 
 

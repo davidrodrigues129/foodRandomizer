@@ -6,4 +6,10 @@
         android:title="List of recipes"
         android:orderInCategory="100"
         app:showAsAction="never" />
+
+    <item
+        android:id="@+id/action_remove"
+        android:title="Remove Recipe"
+        android:orderInCategory="101"
+        app:showAsAction="never" />
 </menu>

@@ -3,4 +3,5 @@
     <color name="colorPrimary">#3366FF</color> <!-- Orange -->
     <color name="colorPrimaryDark">#E64A19</color> <!-- Darker Orange -->
     <color name="colorAccent">#FFC107</color> <!-- Amber -->
+    <color name="muted_blue">#4A90E2</color>
 </resources>
