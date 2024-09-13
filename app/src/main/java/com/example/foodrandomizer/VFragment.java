@@ -1,7 +1,11 @@
 package com.example.foodrandomizer;
 
+import android.app.Activity;
 import android.app.AlertDialog;
+import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
+import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -17,6 +21,7 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
@@ -39,9 +44,15 @@ public class VFragment extends Fragment {
     private static final String RECIPE_IMAGE_KEY_PREFIX = "recipeImage_";
 
     private List<String> foodList = new ArrayList<>();
-    private Map<String, Integer> foodImages = new HashMap<>();
+    private Map<String, Integer> foodImages = new HashMap<>();  // Changed to String for URI storage
 
-    // Sample food list and images (initial data)
+    // Create a new map for custom image URIs (String)
+    private Map<String, String> customImageUris = new HashMap<>();
+
+    private Uri selectedImageUri;  // To store the selected image URI
+    private View dialogView;  // Make dialogView accessible throughout the class
+
+
     private void initializeData() {
         foodList.add("Arroz de atum");
         foodList.add("Bacalhau à Assis");
@@ -84,8 +95,6 @@ public class VFragment extends Fragment {
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setHasOptionsMenu(true);
-        //SharedPreferences sharedPreferences = getContext().getSharedPreferences(PREFS_NAME, getContext().MODE_PRIVATE);
-        //sharedPreferences.edit().clear().apply();
     }
 
     @Override
@@ -106,6 +115,7 @@ public class VFragment extends Fragment {
         return super.onOptionsItemSelected(item);
     }
 
+    // Show recipe list - differentiate between drawable resource and URI
     private void showRecipeList() {
         String[] recipes = foodList.toArray(new String[0]);
 
@@ -115,14 +125,22 @@ public class VFragment extends Fragment {
                     String selectedRecipe = recipes[which];
                     binding.foodName.setText(selectedRecipe);
 
-                    Integer imageResId = foodImages.get(selectedRecipe);
-                    if (imageResId != null) {
-                        binding.foodImageView.setImageResource(imageResId);
+                    if (foodImages.containsKey(selectedRecipe)) {
+                        // Use drawable resource if available
+                        binding.foodImageView.setImageResource(foodImages.get(selectedRecipe));
+                    } else if (customImageUris.containsKey(selectedRecipe)) {
+                        // Use URI if available
+                        Uri imageUri = Uri.parse(customImageUris.get(selectedRecipe));
+                        binding.foodImageView.setImageURI(imageUri);
+                    } else {
+                        // Default image
+                        binding.foodImageView.setImageResource(R.drawable.nova_receita);
                     }
                 })
                 .setPositiveButton("OK", null)
                 .show();
     }
+
 
     @Nullable
     @Override
@@ -135,8 +153,8 @@ public class VFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        initializeData();  // Initialize food list and images
-        loadRecipes(); // Load recipes from SharedPreferences <------------------- Error here
+        initializeData();
+        loadRecipes();
 
         TextView foodTextView = binding.foodName;
         ImageView foodImageView = binding.foodImageView;
@@ -145,15 +163,16 @@ public class VFragment extends Fragment {
 
         randomizeButton.setOnClickListener(v -> {
             String randomFood = foodList.get(new Random().nextInt(foodList.size()));
-            String normalizedRecipe = randomFood.toLowerCase().trim(); // Normalize key
             foodTextView.setText(randomFood);
 
-            Integer imageResId = foodImages.get(randomFood);
-            if (imageResId != null) {
-                foodImageView.setImageResource(imageResId);
-                Log.d("Randomizer", "Set image for " + randomFood + " with resource ID: " + imageResId);
+            if (foodImages.containsKey(randomFood)) {
+                // If the random food has a drawable resource
+                foodImageView.setImageResource(foodImages.get(randomFood));
+            } else if (customImageUris.containsKey(randomFood)) {
+                // If the random food has a custom URI
+                foodImageView.setImageURI(Uri.parse(customImageUris.get(randomFood)));
             } else {
-                Log.d("Randomizer", "No image found for " + randomFood);
+                foodImageView.setImageResource(R.drawable.nova_receita);  // Default image
             }
         });
 
@@ -165,7 +184,7 @@ public class VFragment extends Fragment {
     private void showAddRecipeDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
         LayoutInflater inflater = getLayoutInflater();
-        View dialogView = inflater.inflate(R.layout.dialog_add_recipe, null);
+        dialogView = inflater.inflate(R.layout.dialog_add_recipe, null);  // Assign dialogView here
         builder.setView(dialogView);
 
         // Get dialog fields
@@ -173,42 +192,42 @@ public class VFragment extends Fragment {
         Button selectImageButton = dialogView.findViewById(R.id.selectImageButton);
         ImageView selectedImageView = dialogView.findViewById(R.id.selectedImageView);
 
-        // Handle image selection (sample image for now)
+        // Handle image selection (choose image from gallery)
         selectImageButton.setOnClickListener(v -> {
-            selectedImageView.setImageResource(R.drawable.nova_receita);
+            Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+            intent.setType("image/*");
+            intent.addCategory(Intent.CATEGORY_OPENABLE);
+            intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, false);  // Optional, to prevent multiple selection
+            intent.addFlags(Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION);  // Add persistable URI flag
+            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);  // Read permission flag
+            startActivityForResult(intent, 1);  // Start activity to pick an image
         });
 
         builder.setTitle("Add a New Recipe")
                 .setPositiveButton("Add", (dialog, which) -> {
                     String recipeName = recipeNameInput.getText().toString().trim();
-
-                    // Check if the recipe name already exists (case-insensitive comparison)
-                    boolean recipeExists = false;
-                    for (String recipe : foodList) {
-                        if (recipe.equalsIgnoreCase(recipeName)) {
-                            recipeExists = true;
-                            break;
-                        }
-                    }
+                    boolean recipeExists = foodList.stream().anyMatch(r -> r.equalsIgnoreCase(recipeName));
 
                     if (recipeExists) {
-                        // Show a message if the recipe already exists
                         AlertDialog.Builder errorBuilder = new AlertDialog.Builder(getContext());
                         errorBuilder.setTitle("Duplicate Recipe")
                                 .setMessage("This recipe already exists. Please add a different recipe.")
                                 .setPositiveButton("OK", null)
                                 .show();
                     } else if (!recipeName.isEmpty()) {
-                        // Add the new recipe to the list and map if it does not exist
                         foodList.add(recipeName);
-                        foodImages.put(recipeName, R.drawable.nova_receita);
 
-                        // Save the updated recipes to SharedPreferences
-                        saveRecipes();
+                        if (selectedImageUri != null) {
+                            customImageUris.put(recipeName, selectedImageUri.toString());
+                        } else {
+                            foodImages.put(recipeName, R.drawable.nova_receita);  // Or handle it as empty
+                        }
 
-                        // Update the UI with the new recipe
+                        saveRecipes();  // Save the updated list
                         binding.foodName.setText(recipeName);
-                        binding.foodImageView.setImageResource(R.drawable.nova_receita);
+                        if (selectedImageUri != null) {
+                            binding.foodImageView.setImageURI(selectedImageUri);
+                        }
                     }
                 })
                 .setNegativeButton("Cancel", (dialog, which) -> dialog.dismiss())
@@ -216,63 +235,68 @@ public class VFragment extends Fragment {
                 .show();
     }
 
-
-
-
-    // Save recipes to SharedPreferences
+    // Saving recipes and URIs
     private void saveRecipes() {
         SharedPreferences sharedPreferences = getContext().getSharedPreferences(PREFS_NAME, getContext().MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPreferences.edit();
 
-        // Convert foodList to a single string (comma-separated)
+        // Save the food list
         StringBuilder recipeListBuilder = new StringBuilder();
         for (String recipe : foodList) {
             recipeListBuilder.append(recipe).append(",");
         }
-
-        // Remove trailing comma and save
         if (recipeListBuilder.length() > 0) {
             recipeListBuilder.setLength(recipeListBuilder.length() - 1);
         }
         editor.putString(RECIPE_LIST_KEY, recipeListBuilder.toString());
 
-        // Save the associated images for each recipe with case normalization (toLowerCase and trim)
-        for (Map.Entry<String, Integer> entry : foodImages.entrySet()) {
-            String normalizedRecipe = entry.getKey().toLowerCase().trim();
-            int imageResId = entry.getValue();
-
-            editor.putInt(RECIPE_IMAGE_KEY_PREFIX + normalizedRecipe, imageResId);
-            Log.d("SaveRecipes", "Saving image for " + entry.getKey() + " with ID: " + imageResId);
+        // Save URIs for custom images
+        for (Map.Entry<String, String> entry : customImageUris.entrySet()) {
+            editor.putString(RECIPE_IMAGE_KEY_PREFIX + entry.getKey(), entry.getValue());
         }
 
-        editor.apply();
+        editor.apply();  // Apply the changes
     }
 
-
-    // Load recipes from SharedPreferences
+    // Loading recipes and URIs
     private void loadRecipes() {
         SharedPreferences sharedPreferences = getContext().getSharedPreferences(PREFS_NAME, getContext().MODE_PRIVATE);
 
-        // Get saved recipe list as a single string and split it back to the list
-        String savedRecipes = sharedPreferences.getString(RECIPE_LIST_KEY, "");
-        if (!savedRecipes.isEmpty()) {
+        // Load the recipe list
+        String recipeListString = sharedPreferences.getString(RECIPE_LIST_KEY, "");
+        if (!recipeListString.isEmpty()) {
+            String[] recipes = recipeListString.split(",");
             foodList.clear();
-            foodList.addAll(Arrays.asList(savedRecipes.split(",")));
+            foodList.addAll(Arrays.asList(recipes));
         }
 
-        // Load the associated images for each recipe with case normalization (toLowerCase and trim)
+        // Load custom images for each recipe
         for (String recipe : foodList) {
-            String normalizedRecipe = recipe.toLowerCase().trim();
-            int imageResId = sharedPreferences.getInt(RECIPE_IMAGE_KEY_PREFIX + recipe, R.drawable.nova_receita);
-
-            foodImages.put(normalizedRecipe, imageResId);
-            Log.d("LoadRecipes", "Loaded image for " + recipe + " with ID: " + imageResId);
+            String imageUriString = sharedPreferences.getString(RECIPE_IMAGE_KEY_PREFIX + recipe, "");
+            if (!imageUriString.isEmpty()) {
+                customImageUris.put(recipe, imageUriString);
+            }
         }
-
-        sharedPreferences.getAll();
     }
 
 
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == 1 && resultCode == Activity.RESULT_OK && data != null) {
+            selectedImageUri = data.getData();  // Get the selected image URI
+            if (selectedImageUri != null && dialogView != null) {
+                ImageView selectedImageView = dialogView.findViewById(R.id.selectedImageView);
+                selectedImageView.setImageURI(selectedImageUri);  // Show the selected image in the dialog
+
+                // Persist URI permission
+                requireContext().getContentResolver().takePersistableUriPermission(
+                        selectedImageUri,
+                        Intent.FLAG_GRANT_READ_URI_PERMISSION
+                );
+            }
+        }
+}
 
 
     @Override
