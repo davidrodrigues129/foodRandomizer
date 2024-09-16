@@ -32,6 +32,7 @@ import com.example.foodrandomizer.databinding.FragmentVBinding;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -91,6 +92,10 @@ public class VFragment extends Fragment {
         foodImages.put("Strogonoff", R.drawable.strogonoff);
         foodImages.put("Strogonoff de frango com castanhas", R.drawable.strogonoff_de_frango_com_castanhas);
         foodImages.put("Tirinhas de porco salteadas", R.drawable.tirinhas_de_porco_salteadas);
+
+
+        foodList.add("Nova receita");
+        foodImages.put("Nova receita", R.drawable.nova_receita);
     }
 
     @Override
@@ -162,7 +167,11 @@ public class VFragment extends Fragment {
 
     // Show recipe list - differentiate between drawable resource and URI
     private void showRecipeList() {
-        String[] recipes = foodList.toArray(new String[0]);
+        // Filter out "Nova receita" from the foodList
+        List<String> filteredRecipes = new ArrayList<>(foodList);
+        filteredRecipes.remove("Nova receita");
+
+        String[] recipes = filteredRecipes.toArray(new String[0]);
 
         AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
         builder.setTitle("Recipe List")
@@ -262,13 +271,17 @@ public class VFragment extends Fragment {
                     } else if (!recipeName.isEmpty()) {
                         foodList.add(recipeName);
 
+                        // Sort the list alphabetically
+                        Collections.sort(foodList, String::compareToIgnoreCase);  // Case-insensitive sort
+
                         if (selectedImageUri != null) {
                             customImageUris.put(recipeName, selectedImageUri.toString());
                         } else {
                             foodImages.put(recipeName, R.drawable.nova_receita);  // Or handle it as empty
                         }
 
-                        saveRecipes();  // Save the updated list
+                        saveRecipes();  // Save the updated and sorted list
+
                         binding.foodName.setText(recipeName);
                         if (selectedImageUri != null) {
                             binding.foodImageView.setImageURI(selectedImageUri);
