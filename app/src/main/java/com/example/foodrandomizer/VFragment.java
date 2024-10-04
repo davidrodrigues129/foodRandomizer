@@ -4,10 +4,8 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -23,10 +21,7 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
-import androidx.fragment.app.FragmentManager;
-import androidx.fragment.app.FragmentTransaction;
 
 import com.example.foodrandomizer.databinding.FragmentVBinding;
 
@@ -47,13 +42,14 @@ public class VFragment extends Fragment {
     private static final String RECIPE_IMAGE_KEY_PREFIX = "recipeImage_";
 
     private List<String> foodList = new ArrayList<>();
-    private Map<String, Integer> foodImages = new HashMap<>();  // Changed to String for URI storage
+    private Map<String, Integer> foodImages = new HashMap<>();
 
-    // Create a new map for custom image URIs (String)
     private Map<String, String> customImageUris = new HashMap<>();
 
-    private Uri selectedImageUri;  // To store the selected image URI
-    private View dialogView;  // Make dialogView accessible throughout the class
+    private Uri selectedImageUri;
+    private View dialogView;
+
+    private Map<String, String> recipeSteps = new HashMap<>();
 
 
     private void initializeData() {
@@ -94,6 +90,13 @@ public class VFragment extends Fragment {
         foodImages.put("Tirinhas de porco salteadas", R.drawable.tirinhas_de_porco_salteadas);
 
 
+        recipeSteps.put("Arroz de atum", "1. Cook rice.\n2. Add tuna.\n3. Mix and serve.");
+        recipeSteps.put("Bacalhau à Assis", "1. Prepare codfish.\n2. Add ingredients.\n3. Cook until done.");
+        recipeSteps.put("Penne de atum com manjericão", "1. Boil penne.\n2. Add tuna.\n3. Mix with basil and serve.");
+        //Add more here
+
+
+
         foodList.add("Nova receita");
         foodImages.put("Nova receita", R.drawable.nova_receita);
     }
@@ -125,7 +128,6 @@ public class VFragment extends Fragment {
         return super.onOptionsItemSelected(item);
     }
 
-    // Function to show the remove recipe dialog
     private void showRemoveRecipeDialog() {
         String[] recipes = foodList.toArray(new String[0]);
 
@@ -134,40 +136,33 @@ public class VFragment extends Fragment {
                 .setItems(recipes, (dialog, which) -> {
                     String selectedRecipe = recipes[which];
 
-                    // Show confirmation dialog before deleting
                     new AlertDialog.Builder(getContext())
                             .setTitle("Delete Recipe")
                             .setMessage("Are you sure you want to delete this recipe?")
                             .setPositiveButton("Yes", (confirmDialog, confirmWhich) -> {
-                                // Remove the recipe from the list
-                                foodList.remove(selectedRecipe);
-                                foodImages.remove(selectedRecipe);  // Remove the image if present
-                                customImageUris.remove(selectedRecipe);  // Remove custom URI if present
 
-                                // Save the updated list
+                                foodList.remove(selectedRecipe);
+                                foodImages.remove(selectedRecipe);
+                                customImageUris.remove(selectedRecipe);
+
                                 saveRecipes();
 
-                                // Check if the selected recipe is currently displayed
                                 String displayedRecipe = binding.foodName.getText().toString();
                                 if (selectedRecipe.equals(displayedRecipe)) {
-                                    // Clear the displayed recipe if it matches the deleted one
                                     binding.foodName.setText("");
                                     binding.foodImageView.setImageDrawable(null);
                                 }
 
-                                // Show success message
                                 Toast.makeText(getContext(), "Recipe removed successfully", Toast.LENGTH_SHORT).show();
                             })
-                            .setNegativeButton("No", null) // Dismiss the dialog if "No" is selected
+                            .setNegativeButton("No", null)
                             .show();
                 })
                 .setPositiveButton("OK", null)
                 .show();
     }
 
-    // Show recipe list - differentiate between drawable resource and URI
     private void showRecipeList() {
-        // Filter out "Nova receita" from the foodList
         List<String> filteredRecipes = new ArrayList<>(foodList);
         filteredRecipes.remove("Nova receita");
 
@@ -180,10 +175,8 @@ public class VFragment extends Fragment {
                     binding.foodName.setText(selectedRecipe);
 
                     if (foodImages.containsKey(selectedRecipe)) {
-                        // Use drawable resource if available
                         binding.foodImageView.setImageResource(foodImages.get(selectedRecipe));
                     } else if (customImageUris.containsKey(selectedRecipe)) {
-                        // Use URI if available
                         Uri imageUri = Uri.parse(customImageUris.get(selectedRecipe));
                         binding.foodImageView.setImageURI(imageUri);
                     } else {
@@ -191,6 +184,19 @@ public class VFragment extends Fragment {
                         binding.foodImageView.setImageResource(R.drawable.nova_receita);
                     }
                 })
+                .setPositiveButton("OK", null)
+                .show();
+    }
+
+    private void showRecipeSteps(String recipeName) {
+        String steps = recipeSteps.get(recipeName);
+        if (steps == null) {
+            steps = "No steps available for this recipe.";
+        }
+
+        new AlertDialog.Builder(getContext())
+                .setTitle(recipeName + " - Steps")
+                .setMessage(steps)
                 .setPositiveButton("OK", null)
                 .show();
     }
@@ -220,41 +226,44 @@ public class VFragment extends Fragment {
             foodTextView.setText(randomFood);
 
             if (foodImages.containsKey(randomFood)) {
-                // If the random food has a drawable resource
                 foodImageView.setImageResource(foodImages.get(randomFood));
             } else if (customImageUris.containsKey(randomFood)) {
-                // If the random food has a custom URI
                 foodImageView.setImageURI(Uri.parse(customImageUris.get(randomFood)));
             } else {
-                foodImageView.setImageResource(R.drawable.nova_receita);  // Default image
+                foodImageView.setImageResource(R.drawable.nova_receita);
             }
         });
 
-        // Add recipe button functionality
         addRecipeButton.setOnClickListener(v -> showAddRecipeDialog());
+
+        foodImageView.setOnClickListener(v -> {
+            String currentRecipe = foodTextView.getText().toString();
+            if (!currentRecipe.isEmpty()) {
+                showRecipeSteps(currentRecipe);
+            } else {
+                Toast.makeText(getContext(), "No recipe selected", Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
-    // Function to show the add recipe dialog
     private void showAddRecipeDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
         LayoutInflater inflater = getLayoutInflater();
-        dialogView = inflater.inflate(R.layout.dialog_add_recipe, null);  // Assign dialogView here
+        dialogView = inflater.inflate(R.layout.dialog_add_recipe, null);
         builder.setView(dialogView);
 
-        // Get dialog fields
         EditText recipeNameInput = dialogView.findViewById(R.id.recipeNameInput);
         Button selectImageButton = dialogView.findViewById(R.id.selectImageButton);
         ImageView selectedImageView = dialogView.findViewById(R.id.selectedImageView);
 
-        // Handle image selection (choose image from gallery)
         selectImageButton.setOnClickListener(v -> {
             Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
             intent.setType("image/*");
             intent.addCategory(Intent.CATEGORY_OPENABLE);
-            intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, false);  // Optional, to prevent multiple selection
-            intent.addFlags(Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION);  // Add persistable URI flag
-            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);  // Read permission flag
-            startActivityForResult(intent, 1);  // Start activity to pick an image
+            intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, false);
+            intent.addFlags(Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION);
+            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            startActivityForResult(intent, 1);
         });
 
         builder.setTitle("Add a New Recipe")
@@ -271,16 +280,15 @@ public class VFragment extends Fragment {
                     } else if (!recipeName.isEmpty()) {
                         foodList.add(recipeName);
 
-                        // Sort the list alphabetically
-                        Collections.sort(foodList, String::compareToIgnoreCase);  // Case-insensitive sort
+                        Collections.sort(foodList, String::compareToIgnoreCase);
 
                         if (selectedImageUri != null) {
                             customImageUris.put(recipeName, selectedImageUri.toString());
                         } else {
-                            foodImages.put(recipeName, R.drawable.nova_receita);  // Or handle it as empty
+                            foodImages.put(recipeName, R.drawable.nova_receita);
                         }
 
-                        saveRecipes();  // Save the updated and sorted list
+                        saveRecipes();
 
                         binding.foodName.setText(recipeName);
                         if (selectedImageUri != null) {
@@ -293,12 +301,10 @@ public class VFragment extends Fragment {
                 .show();
     }
 
-    // Saving recipes and URIs
     private void saveRecipes() {
         SharedPreferences sharedPreferences = getContext().getSharedPreferences(PREFS_NAME, getContext().MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPreferences.edit();
 
-        // Save the food list
         StringBuilder recipeListBuilder = new StringBuilder();
         for (String recipe : foodList) {
             recipeListBuilder.append(recipe).append(",");
@@ -308,19 +314,16 @@ public class VFragment extends Fragment {
         }
         editor.putString(RECIPE_LIST_KEY, recipeListBuilder.toString());
 
-        // Save URIs for custom images
         for (Map.Entry<String, String> entry : customImageUris.entrySet()) {
             editor.putString(RECIPE_IMAGE_KEY_PREFIX + entry.getKey(), entry.getValue());
         }
 
-        editor.apply();  // Apply the changes
+        editor.apply();
     }
 
-    // Loading recipes and URIs
     private void loadRecipes() {
         SharedPreferences sharedPreferences = getContext().getSharedPreferences(PREFS_NAME, getContext().MODE_PRIVATE);
 
-        // Load the recipe list
         String recipeListString = sharedPreferences.getString(RECIPE_LIST_KEY, "");
         if (!recipeListString.isEmpty()) {
             String[] recipes = recipeListString.split(",");
@@ -328,7 +331,6 @@ public class VFragment extends Fragment {
             foodList.addAll(Arrays.asList(recipes));
         }
 
-        // Load custom images for each recipe
         for (String recipe : foodList) {
             String imageUriString = sharedPreferences.getString(RECIPE_IMAGE_KEY_PREFIX + recipe, "");
             if (!imageUriString.isEmpty()) {
@@ -342,12 +344,11 @@ public class VFragment extends Fragment {
     public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == 1 && resultCode == Activity.RESULT_OK && data != null) {
-            selectedImageUri = data.getData();  // Get the selected image URI
+            selectedImageUri = data.getData();
             if (selectedImageUri != null && dialogView != null) {
                 ImageView selectedImageView = dialogView.findViewById(R.id.selectedImageView);
-                selectedImageView.setImageURI(selectedImageUri);  // Show the selected image in the dialog
+                selectedImageView.setImageURI(selectedImageUri);
 
-                // Persist URI permission
                 requireContext().getContentResolver().takePersistableUriPermission(
                         selectedImageUri,
                         Intent.FLAG_GRANT_READ_URI_PERMISSION

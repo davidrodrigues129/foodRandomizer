@@ -223,23 +223,21 @@ public class NFragment extends Fragment {
     private void showAddRecipeDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
         LayoutInflater inflater = getLayoutInflater();
-        dialogView = inflater.inflate(R.layout.dialog_add_recipe, null);  // Assign dialogView here
+        dialogView = inflater.inflate(R.layout.dialog_add_recipe, null);
         builder.setView(dialogView);
 
-        // Get dialog fields
         EditText recipeNameInput = dialogView.findViewById(R.id.recipeNameInput);
         Button selectImageButton = dialogView.findViewById(R.id.selectImageButton);
         ImageView selectedImageView = dialogView.findViewById(R.id.selectedImageView);
 
-        // Handle image selection (choose image from gallery)
         selectImageButton.setOnClickListener(v -> {
             Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
             intent.setType("image/*");
             intent.addCategory(Intent.CATEGORY_OPENABLE);
-            intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, false);  // Optional, to prevent multiple selection
-            intent.addFlags(Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION);  // Add persistable URI flag
-            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);  // Read permission flag
-            startActivityForResult(intent, 1);  // Start activity to pick an image
+            intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, false);
+            intent.addFlags(Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION);
+            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            startActivityForResult(intent, 1);
         });
 
         builder.setTitle("Add a New Recipe")
@@ -256,16 +254,15 @@ public class NFragment extends Fragment {
                     } else if (!recipeName.isEmpty()) {
                         foodList.add(recipeName);
 
-                        // Sort the list alphabetically
-                        Collections.sort(foodList, String::compareToIgnoreCase);  // Case-insensitive sort
+                        Collections.sort(foodList, String::compareToIgnoreCase);
 
                         if (selectedImageUri != null) {
                             customImageUris.put(recipeName, selectedImageUri.toString());
                         } else {
-                            foodImages.put(recipeName, R.drawable.nova_receita);  // Or handle it as empty
+                            foodImages.put(recipeName, R.drawable.nova_receita);
                         }
 
-                        saveNewRecipes();  // Save the updated and sorted list
+                        saveNewRecipes();
 
                         binding.foodName.setText(recipeName);
                         if (selectedImageUri != null) {

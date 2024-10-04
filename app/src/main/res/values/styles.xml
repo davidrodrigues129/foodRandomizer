@@ -5,10 +5,10 @@
     </style>
 
     <style name="ActiveTextAppearance" parent="TextAppearance.AppCompat">
-        <item name="android:textSize">20sp</item> <!-- Tamanho da letra ativa -->
+        <item name="android:textSize">20sp</item>
     </style>
 
     <style name="InactiveTextAppearance" parent="TextAppearance.AppCompat">
-        <item name="android:textSize">16sp</item> <!-- Tamanho da letra inativa -->
+        <item name="android:textSize">16sp</item>
     </style>
 </resources>
